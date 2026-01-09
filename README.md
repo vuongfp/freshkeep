@@ -20,6 +20,6 @@ Ví dụ cụ thể:
 ```bash
 flutter clean
 flutter pub get
-flutter build apk --dart-define=GOOGLE_AI_API_KEY=AIzaSyBDM3Uhx7gUAA5-bNsejyV0Vkhe4b0IbVQ
+flutter build apk --dart-define=GOOGLE_AI_API_KEY=
 
 Khi cài đặt file APK này lên điện thoại, ứng dụng sẽ tự động có API Key và có thể gọi Gemini ngay lập tức mà không cần màn hình nhập key.
