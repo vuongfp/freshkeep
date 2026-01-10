@@ -1,51 +1,13 @@
 {
   "project_info": {
-    "project_number": "178167744846",
-    "project_id": "freshkeep-ai-pantry",
-    "storage_bucket": "freshkeep-ai-pantry.firebasestorage.app"
+    "project_number": "770138586262",
+    "project_id": "freshkeep-db",
+    "storage_bucket": "freshkeep-db.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:178167744846:android:caf0725343221da41e361f",
-        "android_client_info": {
-          "package_name": "com.example.freshkeep"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAHqIB4meH4aIvGWfpaiNfcBq6crWX9_9c"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:178167744846:android:459e143e95d45fe81e361f",
-        "android_client_info": {
-          "package_name": "com.example.myapp"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAHqIB4meH4aIvGWfpaiNfcBq6crWX9_9c"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:178167744846:android:ed5117d9bd8fb6a51e361f",
+        "mobilesdk_app_id": "1:770138586262:android:60a807f272bcb6902996b7",
         "android_client_info": {
           "package_name": "com.freshpick.freshkeep"
         }
@@ -53,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAHqIB4meH4aIvGWfpaiNfcBq6crWX9_9c"
+          "current_key": "AIzaSyC-KwZqcSsXjMlrMWLoeKWdSqsF3daXhuw"
         }
       ],
       "services": {

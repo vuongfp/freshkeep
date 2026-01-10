@@ -18,6 +18,8 @@ dependencies:
   crypto: ^3.0.3
   path_provider: ^2.1.2
   fl_chart: ^0.65.0 # Thêm thư viện biểu đồ
+  cloud_functions: ^4.6.5
+  firebase_core: ^2.32.0
 
 dev_dependencies:
   flutter_test:

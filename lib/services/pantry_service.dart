@@ -7,7 +7,14 @@ import '../models/pantry_item.dart';
 import '../models/saved_receipt.dart';
 
 class PantryService {
+      bool _initialized = false;
+    Future<void> clearPantry() async {
+      _pantryItems.clear();
+      await _saveToFile();
+      _broadcastAll();
+    }
   static final PantryService _instance = PantryService._internal();
+  static PantryService get instance => _instance;
   factory PantryService() => _instance;
   PantryService._internal();
 
@@ -63,6 +70,7 @@ class PantryService {
             _savedReceipts = (data['receipts'] as List)
                 .map((e) => SavedReceipt.fromJson(e))
                 .toList();
+            debugPrint('[PantryService] Loaded receipts: \\${_savedReceipts.length}');
           }
 
           if (data['history'] != null) {
@@ -78,6 +86,7 @@ class PantryService {
       }
       
       _broadcastAll();
+      _initialized = true;
     } catch (e) {
       debugPrint("Lỗi khởi tạo storage: $e");
     }
@@ -168,7 +177,7 @@ class PantryService {
 
   // --- PANTRY OPERATIONS ---
   Stream<List<PantryItem>> getPantryItems() {
-    if (_pantryItems.isEmpty && _file == null && !kIsWeb) init();
+    _ensureInitialized();
     return _pantryStreamController.stream;
   }
 
@@ -199,6 +208,7 @@ class PantryService {
   Future<void> deleteItem(String id) async {
     _pantryItems.removeWhere((item) => item.id == id);
     await _saveToFile();
+    _broadcastAll();
   }
 
   Future<void> updateItem(String id, PantryItem updatedItem) async {
@@ -253,11 +263,14 @@ class PantryService {
   // --- RECEIPT OPERATIONS ---
   Stream<List<SavedReceipt>> getSavedReceipts() => _receiptStreamController.stream;
 
+
   Future<String> saveScannedReceipt(
     List<Map<String, dynamic>> items, {
     String? imageName,
     String? imageHash,
   }) async {
+    debugPrint('[PantryService] Saving scanned receipt with ${items.length} items, imageName=$imageName, imageHash=$imageHash');
+    _ensureInitialized();
     final newReceipt = SavedReceipt(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       items: items,
@@ -267,16 +280,20 @@ class PantryService {
     );
 
     _savedReceipts.add(newReceipt);
+    debugPrint('[PantryService] Total receipts after save: ${_savedReceipts.length}');
     await _saveToFile();
+    _broadcastAll();
     return newReceipt.id;
   }
 
   Future<void> deleteSavedReceipt(String id) async {
+    _ensureInitialized();
     _savedReceipts.removeWhere((item) => item.id == id);
     await _saveToFile();
   }
 
   Future<SavedReceipt?> findReceiptByImageHash(String imageHash) async {
+    _ensureInitialized();
     try {
       return _savedReceipts.firstWhere((element) => element.imageHash == imageHash);
     } catch (e) {
@@ -289,6 +306,14 @@ class PantryService {
       return _savedReceipts.firstWhere((element) => element.id == id);
     } catch (e) {
       return null;
+    }
+    _ensureInitialized();
+  }
+
+  void _ensureInitialized() {
+    if (!_initialized) {
+      // ignore: deprecated_member_use
+      init();
     }
   }
 }
