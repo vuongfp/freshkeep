@@ -5,14 +5,13 @@ workflows:
     instance_type: mac_mini_m2
 
     environment:
-      flutter: 3.27.3
+      flutter: stable      # Always use latest stable Flutter
       xcode: latest
       cocoapods: default
       vars:
-        BUNDLE_ID: "com.freshkeep.app"
-        APP_STORE_APPLE_ID: Automatic
+        BUNDLE_ID: "com.freshpick.freshkeep"
       groups:
-        - firebase_credentials  # Add GOOGLE_SERVICES_PLIST in Codemagic env group
+        - firebase_credentials  # Must contain GOOGLE_SERVICES_PLIST (base64 encoded)
 
     triggering:
       events:
@@ -24,35 +23,25 @@ workflows:
     scripts:
       - name: Set up Firebase GoogleService-Info.plist
         script: |
+          mkdir -p $CM_BUILD_DIR/ios/Runner
           echo $GOOGLE_SERVICES_PLIST | base64 --decode > $CM_BUILD_DIR/ios/Runner/GoogleService-Info.plist
 
       - name: Get Flutter packages
-        script: flutter packages pub get
+        script: |
+          flutter --version
+          flutter pub get
 
       - name: Install CocoaPods
-        script: find . -name "Podfile" -execdir pod install \;
-        working_directory: ios
+        script: |
+          cd $CM_BUILD_DIR/ios
+          pod install --repo-update
 
-      - name: Build iOS (no code signing - IPA)
+      - name: Build iOS (no code signing)
         script: |
           flutter build ios --release --no-codesign
 
-      - name: Package IPA
-        script: |
-          xcodebuild -workspace ios/Runner.xcworkspace \
-            -scheme Runner \
-            -sdk iphoneos \
-            -configuration Release \
-            OTHER_CODE_SIGN_FLAGS="--keychain /Library/Keychains/System.keychain" \
-            FLUTTER_BUILD_DIR=build \
-            PROVISIONING_PROFILE_SPECIFIER="" \
-            CODE_SIGN_STYLE=Automatic \
-            -archivePath /tmp/Runner.xcarchive \
-            archive
-
     artifacts:
-      - build/ios/ipa/*.ipa
-      - /tmp/Runner.xcarchive
+      - build/ios/iphoneos/Runner.app
       - flutter_drive.log
 
     publishing:
@@ -69,9 +58,9 @@ workflows:
     instance_type: linux_x2
 
     environment:
-      flutter: 3.27.3
+      flutter: stable      # Always use latest stable Flutter
       vars:
-        PACKAGE_NAME: "com.freshkeep.app"
+        PACKAGE_NAME: "com.freshpick.freshkeep"
 
     triggering:
       events:
@@ -82,7 +71,9 @@ workflows:
 
     scripts:
       - name: Get Flutter packages
-        script: flutter packages pub get
+        script: |
+          flutter --version
+          flutter pub get
 
       - name: Build APK
         script: flutter build apk --release
