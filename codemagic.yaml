@@ -23,8 +23,13 @@ workflows:
     scripts:
       - name: Set up Firebase GoogleService-Info.plist
         script: |
-          mkdir -p $CM_BUILD_DIR/ios/Runner
-          echo $GOOGLE_SERVICES_PLIST | base64 --decode > $CM_BUILD_DIR/ios/Runner/GoogleService-Info.plist
+          # Use env var if set (CI secret), otherwise file already exists in repo
+          if [ -n "$GOOGLE_SERVICES_PLIST" ]; then
+            echo $GOOGLE_SERVICES_PLIST | base64 --decode > $CM_BUILD_DIR/ios/Runner/GoogleService-Info.plist
+            echo "GoogleService-Info.plist written from env var"
+          else
+            echo "Using GoogleService-Info.plist from repository"
+          fi
 
       - name: Get Flutter packages
         script: |
