@@ -1,0 +1,99 @@
+workflows:
+  ios-release:
+    name: FreshKeep iOS Release
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    environment:
+      flutter: 3.27.3
+      xcode: latest
+      cocoapods: default
+      vars:
+        BUNDLE_ID: "com.freshkeep.app"
+        APP_STORE_APPLE_ID: Automatic
+      groups:
+        - firebase_credentials  # Add GOOGLE_SERVICES_PLIST in Codemagic env group
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+
+    scripts:
+      - name: Set up Firebase GoogleService-Info.plist
+        script: |
+          echo $GOOGLE_SERVICES_PLIST | base64 --decode > $CM_BUILD_DIR/ios/Runner/GoogleService-Info.plist
+
+      - name: Get Flutter packages
+        script: flutter packages pub get
+
+      - name: Install CocoaPods
+        script: find . -name "Podfile" -execdir pod install \;
+        working_directory: ios
+
+      - name: Build iOS (no code signing - IPA)
+        script: |
+          flutter build ios --release --no-codesign
+
+      - name: Package IPA
+        script: |
+          xcodebuild -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -sdk iphoneos \
+            -configuration Release \
+            OTHER_CODE_SIGN_FLAGS="--keychain /Library/Keychains/System.keychain" \
+            FLUTTER_BUILD_DIR=build \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            CODE_SIGN_STYLE=Automatic \
+            -archivePath /tmp/Runner.xcarchive \
+            archive
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/Runner.xcarchive
+      - flutter_drive.log
+
+    publishing:
+      email:
+        recipients:
+          - dantevc854@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  android-release:
+    name: FreshKeep Android Release
+    max_build_duration: 30
+    instance_type: linux_x2
+
+    environment:
+      flutter: 3.27.3
+      vars:
+        PACKAGE_NAME: "com.freshkeep.app"
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+
+    scripts:
+      - name: Get Flutter packages
+        script: flutter packages pub get
+
+      - name: Build APK
+        script: flutter build apk --release
+
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+
+    publishing:
+      email:
+        recipients:
+          - dantevc854@gmail.com
+        notify:
+          success: true
+          failure: true
