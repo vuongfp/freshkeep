@@ -12,6 +12,7 @@ import '../models/pantry_item.dart';
 import '../models/saved_receipt.dart';
 import '../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -613,6 +614,19 @@ class _HomeScreenState extends State<HomeScreen> {
               color: theme.colorScheme.primary,
             ),
             onPressed: () => setState(() => _isVietnamese = !_isVietnamese),
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.settings_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            tooltip: _isVietnamese ? 'Cài đặt' : 'Settings',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => SettingsScreen(isVietnamese: _isVietnamese),
+              ),
+            ),
           ),
           IconButton(
             icon: Icon(
