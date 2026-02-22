@@ -1430,21 +1430,27 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNewResultCard(Map<String, dynamic> data) {
-    Color statusColor = Colors.green;
-    String status = (data['status'] ?? '').toString().toUpperCase();
-    if (status.contains('HỎNG') ||
-        status.contains('BAD') ||
-        status.contains('SPOILED')) {
-      statusColor = Colors.red;
-    } else if (status.contains('CẢNH BÁO') || status.contains('WARNING'))
-      statusColor = Colors.orange;
+    // status is ALWAYS English from API: Fresh / Warning / Bad
+    final String statusEn = (data['status'] ?? 'Unknown').toString();
+    final String statusVn = (data['status_vn'] ?? '').toString();
+    final String displayStatus =
+        _isVietnamese && statusVn.isNotEmpty ? statusVn : statusEn;
 
-    // Pick the right language
+    Color statusColor = Colors.green;
+    if (statusEn.toUpperCase().contains('BAD') ||
+        statusEn.toUpperCase().contains('SPOILED')) {
+      statusColor = Colors.red;
+    } else if (statusEn.toUpperCase().contains('WARNING')) {
+      statusColor = Colors.orange;
+    }
+
+    // Pick the right language for name
     final nameVn = (data['name_vn'] ?? '').toString();
     final displayName = _isVietnamese && nameVn.isNotEmpty
         ? nameVn
         : (data['name'] ?? 'Unknown').toString();
 
+    // Pick the right language for advice
     final adviceVn = (data['advice_vn'] ?? '').toString();
     final adviceEn =
         (data['advice_en'] ?? data['advice'] ?? 'No advice').toString();
@@ -1479,7 +1485,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    data['status'] ?? 'Unknown',
+                    displayStatus,
                     style: TextStyle(
                       color: statusColor,
                       fontWeight: FontWeight.bold,
