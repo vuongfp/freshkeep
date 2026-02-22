@@ -1,6 +1,6 @@
 # freshkeep
 
-A new Flutter project.
+A new Flutter project of FreshPick
 
 ## Getting Started
 
