@@ -23,13 +23,9 @@ workflows:
     scripts:
       - name: Set up Firebase GoogleService-Info.plist
         script: |
-          # Use env var if set (CI secret), otherwise file already exists in repo
-          if [ -n "$GOOGLE_SERVICES_PLIST" ]; then
-            echo $GOOGLE_SERVICES_PLIST | base64 --decode > $CM_BUILD_DIR/ios/Runner/GoogleService-Info.plist
-            echo "GoogleService-Info.plist written from env var"
-          else
-            echo "Using GoogleService-Info.plist from repository"
-          fi
+          # File is NOT in repo (gitignored) - must be provided via Codemagic env variable
+          echo $GOOGLE_SERVICES_PLIST | base64 --decode > $CM_BUILD_DIR/ios/Runner/GoogleService-Info.plist
+          echo "GoogleService-Info.plist set up from env variable"
 
       - name: Get Flutter packages
         script: |
