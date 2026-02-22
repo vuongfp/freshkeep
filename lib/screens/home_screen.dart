@@ -29,20 +29,16 @@ class _HomeScreenState extends State<HomeScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(_isVietnamese ? 'Xác nhận' : 'Confirm'),
-        content: Text(
-          _isVietnamese
-              ? 'Bạn có chắc muốn xóa toàn bộ tủ lạnh?'
-              : 'Are you sure you want to clear all pantry items?',
-        ),
+        title: Text(_t('confirm')),
+        content: Text(_t('clear_confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(_isVietnamese ? 'Hủy' : 'Cancel'),
+            child: Text(_t('cancel')),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(_isVietnamese ? 'Xóa hết' : 'Clear all'),
+            child: Text(_t('clear_all')),
           ),
         ],
       ),
@@ -51,11 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
       await _pantryService.clearPantry();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _isVietnamese ? 'Đã xóa toàn bộ tủ lạnh!' : 'Pantry cleared!',
-            ),
-          ),
+          SnackBar(content: Text(_t('clear_success'))),
         );
       }
     }
@@ -71,9 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return StatefulBuilder(
           builder: (context, setSt) {
             return AlertDialog(
-              title: Text(
-                _isVietnamese ? 'Các hóa đơn đã quét' : 'Scanned Receipts',
-              ),
+              title: Text(_t('receipts_title')),
               content: SizedBox(
                 width: 350,
                 child: Column(
@@ -97,10 +87,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                             child: Text(
                               _receiptFilterFrom == null
-                                  ? (_isVietnamese ? 'Từ ngày' : 'From')
+                                  ? _t('from_date')
                                   : _receiptFilterFrom!.toString().split(
-                                      ' ',
-                                    )[0],
+                                        ' ',
+                                      )[0],
                             ),
                           ),
                         ),
@@ -119,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                             child: Text(
                               _receiptFilterTo == null
-                                  ? (_isVietnamese ? 'Đến ngày' : 'To')
+                                  ? _t('to_date')
                                   : _receiptFilterTo!.toString().split(' ')[0],
                             ),
                           ),
@@ -141,11 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           '[ReceiptsDialog] StreamBuilder snapshot: hasData=${snapshot.hasData}, length=${snapshot.data?.length}',
                         );
                         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                          return Text(
-                            _isVietnamese
-                                ? 'Chưa có hóa đơn nào.'
-                                : 'No receipts yet.',
-                          );
+                          return Text(_t('no_receipts'));
                         }
                         var receipts = snapshot.data!;
                         if (_receiptFilterFrom != null) {
@@ -181,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               final r = receipts[idx];
                               return ListTile(
                                 title: Text(
-                                  '${r.items.length} ${_isVietnamese ? 'món' : 'items'}',
+                                  '${r.items.length} ${_t("items")}',
                                 ),
                                 subtitle: Text(
                                   r.scannedAt.toString().split(' ')[0],
@@ -195,9 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     context: context,
                                     builder: (context) => AlertDialog(
                                       title: Text(
-                                        _isVietnamese
-                                            ? 'Chi tiết hóa đơn'
-                                            : 'Receipt Details',
+                                        _t('receipt_detail'),
                                       ),
                                       content: SizedBox(
                                         width: 350,
@@ -207,11 +191,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              '${_isVietnamese ? 'Ngày' : 'Date'}: ${r.scannedAt.toString().split(' ')[0]}',
+                                              '${_t("date_label")}: ${r.scannedAt.toString().split(" ")[0]}',
                                             ),
                                             if (r.imageName != null)
                                               Text(
-                                                '${_isVietnamese ? 'Ảnh' : 'Image'}: ${r.imageName}',
+                                                '${_t("image_label")}: ${r.imageName}',
                                               ),
                                             const Divider(),
                                             ...r.items.map(
@@ -226,9 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         TextButton(
                                           onPressed: () =>
                                               Navigator.pop(context),
-                                          child: Text(
-                                            _isVietnamese ? 'Đóng' : 'Close',
-                                          ),
+                                          child: Text(_t('close')),
                                         ),
                                       ],
                                     ),
@@ -290,18 +272,18 @@ class _HomeScreenState extends State<HomeScreen> {
     'app_title': {'en': 'FreshKeep', 'vn': 'FreshKeep'},
     'search_hint': {'en': 'Search items...', 'vn': 'Tìm kiếm món ăn...'},
     'stats_title': {'en': 'Pantry Statistics', 'vn': 'Thống kê Tủ lạnh'},
-    'add_manual': {'en': 'Add Manual', 'vn': 'Thêm thủ công'},
+    'add_manual': {'en': 'Add Manually', 'vn': 'Thêm thủ công'},
     'check_freshness': {'en': 'Check Freshness', 'vn': 'Kiểm tra độ tươi'},
     'scan_receipt': {'en': 'Scan Receipt', 'vn': 'Quét hóa đơn'},
     'pantry_title': {'en': 'Your Pantry', 'vn': 'Tủ lạnh của bạn'},
     'filter_expiring': {
       'en': 'Expiring Soon (≤ 2 days)',
-      'vn': 'Sắp hết hạn (≤ 2 ngày)',
+      'vn': 'Sắp hết hạn (≤ 2 ngày)'
     },
     'empty_pantry': {'en': 'Pantry is empty.', 'vn': 'Tủ lạnh trống.'},
     'no_match': {
       'en': 'No items match filter.',
-      'vn': 'Không tìm thấy món nào.',
+      'vn': 'Không tìm thấy món nào.'
     },
     'items': {'en': 'items', 'vn': 'món'},
     'days': {'en': 'days', 'vn': 'ngày'},
@@ -321,11 +303,52 @@ class _HomeScreenState extends State<HomeScreen> {
     'delete': {'en': 'Delete', 'vn': 'Xóa'},
     'no_data_stats': {
       'en': 'No data for stats',
-      'vn': 'Chưa có dữ liệu để thống kê',
+      'vn': 'Chưa có dữ liệu để thống kê'
     },
     'camera': {'en': 'Camera', 'vn': 'Camera'},
     'gallery': {'en': 'Gallery', 'vn': 'Thư viện'},
     'left': {'en': 'left', 'vn': 'còn lại'},
+    // Auth
+    'login': {'en': 'Login', 'vn': 'Đăng nhập'},
+    'logout': {'en': 'Logout', 'vn': 'Đăng xuất'},
+    'login_to_use': {'en': 'Login to use', 'vn': 'Đăng nhập để sử dụng'},
+    'login_success': {'en': 'Login successful!', 'vn': 'Đăng nhập thành công!'},
+    'logout_success': {'en': 'Logged out.', 'vn': 'Đã đăng xuất.'},
+    'login_failed': {'en': 'Login failed: ', 'vn': 'Đăng nhập thất bại: '},
+    // Receipts dialog
+    'receipts_title': {'en': 'Scanned Receipts', 'vn': 'Các hóa đơn đã quét'},
+    'no_receipts': {'en': 'No receipts yet.', 'vn': 'Chưa có hóa đơn nào.'},
+    'view_receipts': {
+      'en': 'View Scanned Receipts',
+      'vn': 'Xem hóa đơn đã quét'
+    },
+    'receipt_detail': {'en': 'Receipt Details', 'vn': 'Chi tiết hóa đơn'},
+    'date_label': {'en': 'Date', 'vn': 'Ngày'},
+    'image_label': {'en': 'Image', 'vn': 'Ảnh'},
+    'from_date': {'en': 'From', 'vn': 'Từ ngày'},
+    'to_date': {'en': 'To', 'vn': 'Đến ngày'},
+    // Pantry actions
+    'clear_pantry': {'en': 'Clear Pantry', 'vn': 'Xóa tủ lạnh'},
+    'clear_confirm': {
+      'en': 'Are you sure you want to clear all pantry items?',
+      'vn': 'Bạn có chắc muốn xóa toàn bộ tủ lạnh?'
+    },
+    'clear_success': {'en': 'Pantry cleared!', 'vn': 'Đã xóa toàn bộ tủ lạnh!'},
+    'confirm': {'en': 'Confirm', 'vn': 'Xác nhận'},
+    'clear_all': {'en': 'Clear all', 'vn': 'Xóa hết'},
+    // Upload
+    'tap_to_upload': {'en': 'Tap to upload image', 'vn': 'Chạm để tải ảnh lên'},
+    // Expires
+    'expires_in': {'en': 'Expires in: ', 'vn': 'Hạn dùng: '},
+    // Settings
+    'settings': {'en': 'Settings', 'vn': 'Cài đặt'},
+    // Scan success
+    'scan_success': {
+      'en': 'Added {n} items to pantry!',
+      'vn': 'Đã thêm {n} món vào tủ lạnh!'
+    },
+    // Error
+    'error_prefix': {'en': 'Error: ', 'vn': 'Lỗi: '},
   };
 
   String _t(String key) => _dict[key]?[_isVietnamese ? 'vn' : 'en'] ?? key;
@@ -398,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      setState(() => _error = _isVietnamese ? 'Lỗi: $e' : 'Error: $e');
+      setState(() => _error = '${_t("error_prefix")}$e');
     }
   }
 
@@ -504,8 +527,8 @@ class _HomeScreenState extends State<HomeScreen> {
             quantity: (item['quantity'] is int)
                 ? item['quantity']
                 : (item['quantity'] is double)
-                ? (item['quantity'] as double).round()
-                : 1,
+                    ? (item['quantity'] as double).round()
+                    : 1,
             expiryDate: DateTime.now().add(
               Duration(days: item['suggested_days'] ?? 7),
             ),
@@ -516,12 +539,9 @@ class _HomeScreenState extends State<HomeScreen> {
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              _isVietnamese
-                  ? "Đã thêm ${result.length} món vào tủ lạnh!"
-                  : "Added ${result.length} items to pantry!",
-            ),
-          ),
+              content: Text(
+            _t('scan_success').replaceAll('{n}', '${result.length}'),
+          )),
         );
       }
     } catch (e) {
@@ -540,11 +560,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (!mounted) return;
         setState(() => _user = user);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _isVietnamese ? 'Đăng nhập thành công!' : 'Login successful!',
-            ),
-          ),
+          SnackBar(content: Text(_t('login_success'))),
         );
       }
     } catch (e) {
@@ -555,21 +571,13 @@ class _HomeScreenState extends State<HomeScreen> {
         if (!mounted) return;
         setState(() => _user = currentUser);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _isVietnamese ? 'Đăng nhập thành công!' : 'Login successful!',
-            ),
-          ),
+          SnackBar(content: Text(_t('login_success'))),
         );
         return;
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _isVietnamese ? 'Đăng nhập thất bại: $e' : 'Login failed: $e',
-          ),
-        ),
+        SnackBar(content: Text('${_t("login_failed")}$e')),
       );
     }
   }
@@ -579,7 +587,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     setState(() => _user = null);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_isVietnamese ? 'Đã đăng xuất.' : 'Logged out.')),
+      SnackBar(content: Text(_t('logout_success'))),
     );
   }
 
@@ -620,7 +628,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Icons.settings_outlined,
               color: theme.colorScheme.primary,
             ),
-            tooltip: _isVietnamese ? 'Cài đặt' : 'Settings',
+            tooltip: _t('settings'),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -659,7 +667,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemBuilder: (context) => [
                     PopupMenuItem(
                       value: 'logout',
-                      child: Text(_isVietnamese ? 'Đăng xuất' : 'Logout'),
+                      child: Text(_t('logout')),
                     ),
                   ],
                   onSelected: (value) {
@@ -682,11 +690,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ElevatedButton.icon(
                     onPressed: _showReceiptsDialog,
                     icon: const Icon(Icons.receipt_long),
-                    label: Text(
-                      _isVietnamese
-                          ? 'Xem hóa đơn đã quét'
-                          : 'View scanned receipts',
-                    ),
+                    label: Text(_t('view_receipts')),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange[700],
                       foregroundColor: Colors.white,
@@ -699,9 +703,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ElevatedButton.icon(
                     onPressed: _clearPantry,
                     icon: const Icon(Icons.delete_forever),
-                    label: Text(
-                      _isVietnamese ? 'Clear tủ lạnh' : 'Clear pantry',
-                    ),
+                    label: Text(_t('clear_pantry')),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red[700],
                       foregroundColor: Colors.white,
@@ -721,9 +723,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ElevatedButton.icon(
                     onPressed: _handleLogin,
                     icon: const Icon(Icons.login),
-                    label: Text(
-                      _isVietnamese ? 'Đăng nhập để sử dụng' : 'Login to use',
-                    ),
+                    label: Text(_t('login_to_use')),
                   ),
                 ),
               )
@@ -939,9 +939,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   selected: _selectedCategory == key,
                   selectedColor: const Color(0xFF2E7D32),
                   labelStyle: TextStyle(
-                    color: _selectedCategory == key
-                        ? Colors.white
-                        : Colors.black,
+                    color:
+                        _selectedCategory == key ? Colors.white : Colors.black,
                   ),
                   onSelected: (sel) =>
                       setState(() => _selectedCategory = sel ? key : 'all'),
@@ -1004,8 +1003,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Color iconColor = Colors.green;
             if (item.isExpired) {
               iconColor = Colors.red;
-            } else if (item.isExpiringSoon)
-              iconColor = Colors.orange;
+            } else if (item.isExpiringSoon) iconColor = Colors.orange;
 
             return Dismissible(
               key: Key(item.id),
@@ -1351,9 +1349,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      _isVietnamese
-                          ? "Chạm để tải ảnh lên"
-                          : "Tap to upload image",
+                      _t('tap_to_upload'),
                       style: TextStyle(
                         color: theme.colorScheme.primary,
                         fontWeight: FontWeight.bold,
@@ -1450,11 +1446,10 @@ class _HomeScreenState extends State<HomeScreen> {
         : (data['name'] ?? 'Unknown').toString();
 
     final adviceVn = (data['advice_vn'] ?? '').toString();
-    final adviceEn = (data['advice_en'] ?? data['advice'] ?? 'No advice')
-        .toString();
-    final displayAdvice = _isVietnamese && adviceVn.isNotEmpty
-        ? adviceVn
-        : adviceEn;
+    final adviceEn =
+        (data['advice_en'] ?? data['advice'] ?? 'No advice').toString();
+    final displayAdvice =
+        _isVietnamese && adviceVn.isNotEmpty ? adviceVn : adviceEn;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 20),
@@ -1499,13 +1494,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 const Icon(Icons.timer, color: Colors.grey, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  _isVietnamese ? "Hạn dùng: " : "Expires in: ",
+                  _t('expires_in'),
                   style: TextStyle(color: Colors.grey[600]),
                 ),
                 Text(
-                  _isVietnamese
-                      ? "${data['days_left'] ?? '?'} ngày"
-                      : "${data['days_left'] ?? '?'} days",
+                  "${data['days_left'] ?? '?'} ${_t('days')}",
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
