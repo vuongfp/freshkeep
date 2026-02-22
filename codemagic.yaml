@@ -5,13 +5,11 @@ workflows:
     instance_type: mac_mini_m2
 
     environment:
-      flutter: stable      # Always use latest stable Flutter
+      flutter: stable
       xcode: latest
       cocoapods: default
       vars:
         BUNDLE_ID: "com.freshpick.freshkeep"
-      groups:
-        - firebase_credentials  # Must contain GOOGLE_SERVICES_PLIST (base64 encoded)
 
     triggering:
       events:
@@ -21,11 +19,14 @@ workflows:
           include: true
 
     scripts:
-      - name: Set up Firebase GoogleService-Info.plist
+      - name: Verify Firebase GoogleService-Info.plist exists
         script: |
-          # File is NOT in repo (gitignored) - must be provided via Codemagic env variable
-          echo $GOOGLE_SERVICES_PLIST | base64 --decode > $CM_BUILD_DIR/ios/Runner/GoogleService-Info.plist
-          echo "GoogleService-Info.plist set up from env variable"
+          if [ -f "$CM_BUILD_DIR/ios/Runner/GoogleService-Info.plist" ]; then
+            echo "✅ GoogleService-Info.plist found in repo"
+          else
+            echo "❌ GoogleService-Info.plist NOT found"
+            exit 1
+          fi
 
       - name: Get Flutter packages
         script: |
@@ -59,7 +60,7 @@ workflows:
     instance_type: linux_x2
 
     environment:
-      flutter: stable      # Always use latest stable Flutter
+      flutter: stable
       vars:
         PACKAGE_NAME: "com.freshpick.freshkeep"
 
