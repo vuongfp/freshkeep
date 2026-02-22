@@ -7,12 +7,13 @@ import '../models/pantry_item.dart';
 import '../models/saved_receipt.dart';
 
 class PantryService {
-      bool _initialized = false;
-    Future<void> clearPantry() async {
-      _pantryItems.clear();
-      await _saveToFile();
-      _broadcastAll();
-    }
+  bool _initialized = false;
+  Future<void> clearPantry() async {
+    _pantryItems.clear();
+    await _saveToFile();
+    _broadcastAll();
+  }
+
   static final PantryService _instance = PantryService._internal();
   static PantryService get instance => _instance;
   factory PantryService() => _instance;
@@ -20,12 +21,12 @@ class PantryService {
 
   File? _file;
   final String _fileName = 'freshkeep_data.json';
-  
+
   // In-memory data
   List<PantryItem> _pantryItems = [];
   List<SavedReceipt> _savedReceipts = [];
   List<Map<String, dynamic>> _freshnessHistory = [];
-  
+
   // Expiry Defaults
   Map<String, int> _expiryDefaults = {
     'meat': 7,
@@ -38,9 +39,12 @@ class PantryService {
   };
 
   // Stream Controllers
-  final _pantryStreamController = StreamController<List<PantryItem>>.broadcast();
-  final _receiptStreamController = StreamController<List<SavedReceipt>>.broadcast();
-  final _historyStreamController = StreamController<List<Map<String, dynamic>>>.broadcast();
+  final _pantryStreamController =
+      StreamController<List<PantryItem>>.broadcast();
+  final _receiptStreamController =
+      StreamController<List<SavedReceipt>>.broadcast();
+  final _historyStreamController =
+      StreamController<List<Map<String, dynamic>>>.broadcast();
 
   // --- INIT & FILE IO ---
 
@@ -54,7 +58,7 @@ class PantryService {
 
       final directory = await getApplicationDocumentsDirectory();
       _file = File('${directory.path}/$_fileName');
-      
+
       if (await _file!.exists()) {
         try {
           final content = await _file!.readAsString();
@@ -70,11 +74,15 @@ class PantryService {
             _savedReceipts = (data['receipts'] as List)
                 .map((e) => SavedReceipt.fromJson(e))
                 .toList();
-            debugPrint('[PantryService] Loaded receipts: \\${_savedReceipts.length}');
+            debugPrint(
+              '[PantryService] Loaded receipts: \\${_savedReceipts.length}',
+            );
           }
 
           if (data['history'] != null) {
-            _freshnessHistory = List<Map<String, dynamic>>.from(data['history']);
+            _freshnessHistory = List<Map<String, dynamic>>.from(
+              data['history'],
+            );
           }
 
           if (data['expiry_defaults'] != null) {
@@ -84,7 +92,7 @@ class PantryService {
           debugPrint("Lỗi đọc file local: $e");
         }
       }
-      
+
       _broadcastAll();
       _initialized = true;
     } catch (e) {
@@ -95,9 +103,9 @@ class PantryService {
   Future<void> _saveToFile() async {
     if (_file == null) {
       _broadcastAll(); // Update UI even if file save is skipped (Web)
-      return; 
+      return;
     }
-    
+
     final data = {
       'pantry': _pantryItems.map((e) => e.toJson()).toList(),
       'receipts': _savedReceipts.map((e) => e.toJson()).toList(),
@@ -129,14 +137,18 @@ class PantryService {
   Future<void> importData(String jsonString) async {
     try {
       final data = jsonDecode(jsonString);
-      
+
       if (data is! Map) throw Exception("Invalid JSON data");
 
       if (data['pantry'] != null) {
-        _pantryItems = (data['pantry'] as List).map((e) => PantryItem.fromJson(e)).toList();
+        _pantryItems = (data['pantry'] as List)
+            .map((e) => PantryItem.fromJson(e))
+            .toList();
       }
       if (data['receipts'] != null) {
-        _savedReceipts = (data['receipts'] as List).map((e) => SavedReceipt.fromJson(e)).toList();
+        _savedReceipts = (data['receipts'] as List)
+            .map((e) => SavedReceipt.fromJson(e))
+            .toList();
       }
       if (data['history'] != null) {
         _freshnessHistory = List<Map<String, dynamic>>.from(data['history']);
@@ -183,6 +195,7 @@ class PantryService {
 
   Future<String> createPantryItem({
     required String name,
+    String? nameVn,
     required int quantity,
     required DateTime expiryDate,
     required String unit,
@@ -192,6 +205,7 @@ class PantryService {
     final newItem = PantryItem(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: name,
+      nameVn: nameVn,
       quantity: quantity,
       expiryDate: expiryDate,
       unit: unit,
@@ -220,9 +234,13 @@ class PantryService {
   }
 
   // --- HISTORY OPERATIONS ---
-  Stream<List<Map<String, dynamic>>> getFreshnessHistory() => _historyStreamController.stream;
+  Stream<List<Map<String, dynamic>>> getFreshnessHistory() =>
+      _historyStreamController.stream;
 
-  Future<String> addFreshnessHistory(Map<String, dynamic> data, {String? imageHash}) async {
+  Future<String> addFreshnessHistory(
+    Map<String, dynamic> data, {
+    String? imageHash,
+  }) async {
     final newEntry = {
       'id': DateTime.now().millisecondsSinceEpoch.toString(),
       'name': data['name'] ?? 'Unknown',
@@ -232,7 +250,7 @@ class PantryService {
       'image_hash': imageHash,
       'checked_at': DateTime.now().toIso8601String(),
     };
-    
+
     _freshnessHistory.add(newEntry);
     await _saveToFile();
     return newEntry['id'];
@@ -243,7 +261,9 @@ class PantryService {
     await _saveToFile();
   }
 
-  Future<Map<String, dynamic>?> findFreshnessByImageHash(String imageHash) async {
+  Future<Map<String, dynamic>?> findFreshnessByImageHash(
+    String imageHash,
+  ) async {
     try {
       final item = _freshnessHistory.firstWhere(
         (element) => element['image_hash'] == imageHash,
@@ -261,15 +281,17 @@ class PantryService {
   }
 
   // --- RECEIPT OPERATIONS ---
-  Stream<List<SavedReceipt>> getSavedReceipts() => _receiptStreamController.stream;
-
+  Stream<List<SavedReceipt>> getSavedReceipts() =>
+      _receiptStreamController.stream;
 
   Future<String> saveScannedReceipt(
     List<Map<String, dynamic>> items, {
     String? imageName,
     String? imageHash,
   }) async {
-    debugPrint('[PantryService] Saving scanned receipt with ${items.length} items, imageName=$imageName, imageHash=$imageHash');
+    debugPrint(
+      '[PantryService] Saving scanned receipt with ${items.length} items, imageName=$imageName, imageHash=$imageHash',
+    );
     _ensureInitialized();
     final newReceipt = SavedReceipt(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -280,7 +302,9 @@ class PantryService {
     );
 
     _savedReceipts.add(newReceipt);
-    debugPrint('[PantryService] Total receipts after save: ${_savedReceipts.length}');
+    debugPrint(
+      '[PantryService] Total receipts after save: ${_savedReceipts.length}',
+    );
     await _saveToFile();
     _broadcastAll();
     return newReceipt.id;
@@ -295,19 +319,21 @@ class PantryService {
   Future<SavedReceipt?> findReceiptByImageHash(String imageHash) async {
     _ensureInitialized();
     try {
-      return _savedReceipts.firstWhere((element) => element.imageHash == imageHash);
+      return _savedReceipts.firstWhere(
+        (element) => element.imageHash == imageHash,
+      );
     } catch (e) {
       return null;
     }
   }
 
   Future<SavedReceipt?> getSavedReceiptById(String id) async {
+    _ensureInitialized();
     try {
       return _savedReceipts.firstWhere((element) => element.id == id);
     } catch (e) {
       return null;
     }
-    _ensureInitialized();
   }
 
   void _ensureInitialized() {

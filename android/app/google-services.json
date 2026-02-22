@@ -12,7 +12,20 @@
           "package_name": "com.freshpick.freshkeep"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "770138586262-2vg2b0bchsvmehdk3jq6ppa5usd7i3cj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.freshpick.freshkeep",
+            "certificate_hash": "4132797703e9c9fa2a5f29c4b0d69513abe569d8"
+          }
+        },
+        {
+          "client_id": "770138586262-q5gmsd803su94opolo27crvq1ldf322q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC-KwZqcSsXjMlrMWLoeKWdSqsF3daXhuw"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "770138586262-q5gmsd803su94opolo27crvq1ldf322q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

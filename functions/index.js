@@ -36,23 +36,62 @@ exports.analyzeImage = onCall({ secrets: [GEMINI_API_KEY] }, async (request) => 
 		if (!image) throw new Error("Missing image");
 		// Prompt cho Gemini
 		const prompt =
-			"Analyze produce. JSON only: name_en, name_vn, status (TƯƠI/HỎNG), days_left (int), advice_en, advice_vn.";
-			const resultText = await analyzeImageBase64(image, prompt, process.env.GEMINI_API_KEY);
-		const json = JSON.parse(resultText.replace(/```json|```/g, "").trim());
+			`You are a produce freshness expert. Analyze the food/produce in the image and respond with ONLY a valid JSON object (no markdown, no explanation). The JSON must have exactly these fields:
+{
+  "name_en": "English name of the produce",
+  "name_vn": "Vietnamese name of the produce",
+  "status": "TƯƠI or HỎNG",
+  "days_left": <integer number of days>,
+  "advice_en": "Brief storage/consumption advice in English",
+  "advice_vn": "Lời khuyên ngắn gọn bằng tiếng Việt"
+}`;
+		const resultText = await analyzeImageBase64(image, prompt, GEMINI_API_KEY.value());
+		logger.info("Gemini raw response:", resultText);
+		// Clean up markdown code fences if present
+		const cleanText = resultText.replace(/```json|```/g, "").trim();
+		let parsed = JSON.parse(cleanText);
+		// If Gemini returned an array, take the first element
+		const json = Array.isArray(parsed) ? (parsed[0] || {}) : parsed;
+		logger.info("Parsed JSON:", json);
+
+		const nameEn = json.name_en === "undefined" || !json.name_en ? "Unknown" : json.name_en;
+		const nameVn = json.name_vn === "undefined" || !json.name_vn ? "" : json.name_vn;
+		const status = json.status === "undefined" || !json.status ? "Unknown" : json.status;
+		const daysLeft = isNaN(parseInt(json.days_left)) ? 0 : parseInt(json.days_left);
+		const adviceEn = json.advice_en === "undefined" || !json.advice_en ? "No advice" : json.advice_en;
+		const adviceVn = json.advice_vn === "undefined" || !json.advice_vn ? "" : json.advice_vn;
+
 		return {
-			name: `${json.name_en} (${json.name_vn})`,
-			status: json.status,
-			days_left: json.days_left,
-			advice: `🇬🇧 ${json.advice_en}\n🇻🇳 ${json.advice_vn}`,
+			name: nameEn,
+			name_vn: nameVn,
+			status: status,
+			days_left: daysLeft,
+			advice_en: adviceEn,
+			advice_vn: adviceVn,
 		};
 	} catch (e) {
 		logger.error(e);
 		return {
-			name: "Lỗi",
+			name: "Error",
+			name_vn: "Lỗi",
 			status: "Unknown",
 			days_left: 0,
-			advice: e.message || String(e),
+			advice_en: e.message || String(e),
+			advice_vn: e.message || String(e),
 		};
+	}
+});
+
+// listModels: Trả về danh sách các model khả dụng để debug
+exports.listModels = onCall({ secrets: [GEMINI_API_KEY] }, async (request) => {
+	try {
+		const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY.value()}`;
+		const response = await fetch(url);
+		const data = await response.json();
+		return data;
+	} catch (e) {
+		logger.error(e);
+		return { error: e.message };
 	}
 });
 
@@ -63,17 +102,19 @@ exports.scanReceipt = onCall({ secrets: [GEMINI_API_KEY] }, async (request) => {
 		if (!image) throw new Error("Missing image");
 		const prompt =
 			"OCR receipt. JSON ARRAY: name_en, name_vn, quantity, unit, suggested_days (int), type. No markdown.";
-			const resultText = await analyzeImageBase64(image, prompt, process.env.GEMINI_API_KEY);
-		const parsed = JSON.parse(resultText.replace(/```json|```/g, "").trim());
-		return parsed.map((item) => {
-			let name = item.name_en || "Unknown";
-			if (item.name_vn) name += ` / ${item.name_vn}`;
+		const resultText = await analyzeImageBase64(image, prompt, GEMINI_API_KEY.value());
+		logger.info("Gemini OCR response:", resultText);
+		const cleanText = resultText.replace(/```json|```/g, "").trim();
+		const parsed = JSON.parse(cleanText);
+		logger.info("Parsed OCR JSON:", parsed);
+		return (Array.isArray(parsed) ? parsed : []).map((item) => {
 			return {
-				name,
-				quantity: item.quantity,
-				unit: item.unit,
-				suggested_days: item.suggested_days,
-				type: item.type,
+				name: item.name_en || "Unknown",
+				name_vn: item.name_vn || "",
+				quantity: item.quantity || 1,
+				unit: item.unit || "item",
+				suggested_days: item.suggested_days || 7,
+				type: item.type || "Other",
 			};
 		});
 	} catch (e) {

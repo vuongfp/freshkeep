@@ -1,6 +1,7 @@
 class PantryItem {
   final String id;
   final String name;
+  final String? nameVn;
   final int quantity;
   final DateTime expiryDate;
   final String unit;
@@ -11,6 +12,7 @@ class PantryItem {
   PantryItem({
     required this.id,
     required this.name,
+    this.nameVn,
     required this.quantity,
     required this.expiryDate,
     this.unit = 'piece',
@@ -24,9 +26,11 @@ class PantryItem {
     return PantryItem(
       id: json['id'],
       name: json['name'] ?? 'Unknown',
+      nameVn: json['name_vn'],
       quantity: json['quantity'] ?? 1,
-      // Parse DateTime from String format
-      expiryDate: DateTime.tryParse(json['expiry_date'] ?? '') ?? DateTime.now().add(const Duration(days: 7)),
+      expiryDate:
+          DateTime.tryParse(json['expiry_date'] ?? '') ??
+          DateTime.now().add(const Duration(days: 7)),
       unit: json['unit'] ?? 'piece',
       notes: json['notes'],
       createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
@@ -39,8 +43,9 @@ class PantryItem {
     return {
       'id': id,
       'name': name,
+      'name_vn': nameVn,
       'quantity': quantity,
-      'expiry_date': expiryDate.toIso8601String(), // Save as String
+      'expiry_date': expiryDate.toIso8601String(),
       'unit': unit,
       'notes': notes,
       'created_at': createdAt.toIso8601String(),

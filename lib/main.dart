@@ -40,8 +40,7 @@ class FreshKeepApp extends StatelessWidget {
           seedColor: const Color(0xFF2E7D32), // Xanh lá đậm
           primary: const Color(0xFF2E7D32),
           secondary: const Color(0xFFFF8F00), // Cam nhấn
-          surface: Colors.white,
-          background: const Color(0xFFF1F8E9), // Nền xanh nhạt dịu mắt
+          surface: const Color(0xFFF1F8E9), // Nền xanh nhạt dịu mắt
           error: const Color(0xFFD32F2F),
         ),
         useMaterial3: true,

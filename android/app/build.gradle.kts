@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.freshkeep"
+    namespace = "com.freshpick.freshkeep"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
