@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -25,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // --- AUTH ---
   final AuthService _authService = AuthService.instance;
   User? _user;
+  bool _isGuest = false;
   Future<void> _clearPantry() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -349,6 +351,8 @@ class _HomeScreenState extends State<HomeScreen> {
     },
     // Error
     'error_prefix': {'en': 'Error: ', 'vn': 'Lỗi: '},
+    'continue_as_guest': {'en': 'Continue as guest', 'vn': 'Tiếp tục với khách'},
+    'guest_mode': {'en': 'Guest Mode', 'vn': 'Chế độ khách'},
   };
 
   String _t(String key) => _dict[key]?[_isVietnamese ? 'vn' : 'en'] ?? key;
@@ -563,9 +567,77 @@ class _HomeScreenState extends State<HomeScreen> {
           SnackBar(content: Text(_t('login_success'))),
         );
       }
+    } on PlatformException catch (e) {
+      debugPrint('[Auth] signInWithGoogle error: $e');
+      // If it's a keychain error, offer "Continue as Guest" to the user
+      if (e.code == 'keychain_error') {
+        final choice = await showDialog<String?>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(_t('login_failed')),
+            content: Text('Google Sign-In failed due to a keychain error. Continue as guest?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, 'cancel'),
+                child: Text(_t('cancel')),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, 'retry'),
+                child: Text('Retry'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, 'guest'),
+                child: Text('Continue as Guest'),
+              ),
+            ],
+          ),
+        );
+
+        if (!mounted) return;
+
+        if (choice == 'guest') {
+          try {
+            final anon = await _authService.signInAnonymously();
+            if (anon != null && mounted) {
+              setState(() => _user = anon);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Signed in as guest')),
+              );
+            }
+            return;
+          } catch (e2) {
+            debugPrint('[Auth] anonymous sign-in failed: $e2');
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${_t('login_failed')}$e2')),
+            );
+            return;
+          }
+        } else if (choice == 'retry') {
+          // Try again
+          return _handleLogin();
+        } else {
+          return; // canceled
+        }
+      }
+
+      // Non-keychain errors: check if user signed in despite exception
+      final currentUser = _authService.currentUser;
+      if (currentUser != null) {
+        if (!mounted) return;
+        setState(() => _user = currentUser);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_t('login_success'))),
+        );
+        return;
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${_t("login_failed")}$e')),
+      );
     } catch (e) {
       debugPrint('[Auth] signInWithGoogle error: $e');
-      // Check if user actually signed in despite the exception (common on emulator)
       final currentUser = _authService.currentUser;
       if (currentUser != null) {
         if (!mounted) return;
@@ -581,11 +653,43 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
   }
+  
+  Future<void> _handleGuestLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      final anon = await _authService.signInAnonymously();
+      if (anon != null && mounted) {
+        setState(() {
+          _user = anon;
+          _isGuest = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_t('guest_mode'))),
+        );
+      }
+    } catch (e) {
+      debugPrint('[Auth] Firebase guest sign-in failed, falling back to local mode: $e');
+      if (mounted) {
+        setState(() {
+          _user = null;
+          _isGuest = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${_t('guest_mode')} (Offline)')),
+        );
+      }
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
 
   Future<void> _handleLogout() async {
     await _authService.signOut();
     if (!mounted) return;
-    setState(() => _user = null);
+    setState(() {
+      _user = null;
+      _isGuest = false;
+    });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(_t('logout_success'))),
     );
@@ -599,15 +703,18 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.max,
           children: [
             Icon(Icons.eco, color: theme.colorScheme.primary),
             const SizedBox(width: 8),
-            Text(
-              _t('app_title'),
-              style: TextStyle(
-                color: theme.colorScheme.onSurface,
-                fontWeight: FontWeight.bold,
+            Expanded(
+              child: Text(
+                _t('app_title'),
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -645,7 +752,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             onPressed: () => setState(() => _showStats = !_showStats),
           ),
-          _user == null
+          _user == null && !_isGuest
               ? TextButton.icon(
                   onPressed: _handleLogin,
                   icon: const Icon(Icons.login, color: Colors.blue),
@@ -716,62 +823,77 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
 
             // 2. ACTION BUTTONS
-            if (_user == null)
+            if (_user == null && !_isGuest) ...[
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Center(
-                  child: ElevatedButton.icon(
-                    onPressed: _handleLogin,
-                    icon: const Icon(Icons.login),
-                    label: Text(_t('login_to_use')),
-                  ),
-                ),
-              )
-            else if (_image != null && !_isLoading)
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildNewActionButton(
-                      context,
-                      label: _t('check_freshness'),
-                      icon: Icons.search,
-                      color: theme.colorScheme.secondary,
-                      onPressed: _checkFreshness,
+                child: Column(
+                  children: [
+                    Center(
+                      child: ElevatedButton.icon(
+                        onPressed: _handleLogin,
+                        icon: const Icon(Icons.login),
+                        label: Text(_t('login_to_use')),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildNewActionButton(
-                      context,
-                      label: _t('scan_receipt'),
-                      icon: Icons.receipt_long,
-                      color: theme.colorScheme.primary,
-                      onPressed: _scanReceipt,
+                    const SizedBox(height: 12),
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: _handleGuestLogin,
+                        icon: const Icon(Icons.person_outline),
+                        label: Text(_t('continue_as_guest')),
+                      ),
                     ),
-                  ),
-                ],
-              )
-            else if (_isLoading)
-              const Center(
-                child: SpinKitThreeBounce(color: Color(0xFF2E7D32), size: 30.0),
-              )
-            else
-              ElevatedButton.icon(
-                onPressed: _showAddPantryDialog, // Đã khôi phục hàm này
-                icon: const Icon(Icons.add_circle_outline, size: 28),
-                label: Text(
-                  _t('add_manual'),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  ],
                 ),
               ),
+            ] else ...[
+              if (_image != null && !_isLoading)
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildNewActionButton(
+                        context,
+                        label: _t('check_freshness'),
+                        icon: Icons.search,
+                        color: theme.colorScheme.secondary,
+                        onPressed: _checkFreshness,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildNewActionButton(
+                        context,
+                        label: _t('scan_receipt'),
+                        icon: Icons.receipt_long,
+                        color: theme.colorScheme.primary,
+                        onPressed: _scanReceipt,
+                      ),
+                    ),
+                  ],
+                )
+              else if (_isLoading)
+                const Center(
+                  child:
+                      SpinKitThreeBounce(color: Color(0xFF2E7D32), size: 30.0),
+                )
+              else
+                ElevatedButton.icon(
+                  onPressed: _showAddPantryDialog,
+                  icon: const Icon(Icons.add_circle_outline, size: 28),
+                  label: Text(
+                    _t('add_manual'),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                  ),
+                ),
+            ],
             const SizedBox(height: 24),
 
             // 3. RESULTS & ERROR
